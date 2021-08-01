@@ -1,0 +1,49 @@
+version: "3"
+services:
+  profiler-ssl.ms.internal.allyright.com:
+    ports: 
+      - "3000:3000"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - MONGODB_URI=mongodb://profiler-ssl.ms.db.internal.allyright.com/profiler-ssl
+      - MONGODB_POOLSIZE=20
+      - NATS_URI=nats-main:4222
+      - NATS_CLUSTER_ID=cluster1
+      - NATS_SUBJECT=ERROR.LOG
+      - NATS_WORKER_SUBJECT=COMPLETED.SSL.LINK
+  profiler-ssl.ms.db.internal.allyright.com:
+    ports:
+      - '27017:27017'
+    image: 'docker.io/bitnami/mongodb:4.2-debian-10'
+    volumes:
+      - 'profiler_ssl_ms_db_internal_allyright_com_data:/bitnami/mongodb'
+  nats-main:
+    image: nats-streaming:0.20.0
+    restart: unless-stopped
+    entrypoint:
+      [
+        "/nats-streaming-server",
+        '-p',
+        '4222',
+        '-m',
+        '8222',
+        '-hbi',
+        '5s',
+        '-hbt',
+        '5s',
+        '-hbf',
+        '2',
+        '-SD',
+        '-cid',
+        'cluster1'
+      ]
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"
+volumes:
+  profiler_ssl_ms_db_internal_allyright_com_data:
+    driver: local
